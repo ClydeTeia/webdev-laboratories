@@ -1,0 +1,6 @@
+Idk 100
+variable 300
+check 100
+Idk 100
+variable 300
+check 100
