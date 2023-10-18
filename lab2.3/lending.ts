@@ -1,7 +1,9 @@
 import * as http from "node:http";
 import * as fs from "node:fs/promises";
 import * as querystring from "querystring";
+import { generateUniqueToken } from "./generateUniqueToken";
 import { connectDatabase, closeDatabase } from "./database";
+import displayLoanDetails from "./displayLoanDetails";
 
 const server = http.createServer(handleRequest);
 const port = 3000;
@@ -24,53 +26,102 @@ async function handleRequest(
       response.writeHead(500, { "Content-Type": "text/plain" });
       response.end("Internal Server Error at apply-loan");
     }
-  } else if (url === "/apply-loan-success" && method === "POST") {
-    try {
-      let body = "";
+  } else if (url === "/apply-loan-success") {
+    let body = "";
 
-      request.on("data", (chunk) => {
-        body += chunk.toString();
-      });
+    request.on("data", (chunk) => {
+      body += chunk.toString();
+    });
 
-      request.on("end", async () => {
-        try {
-          const loanFormData = querystring.parse(body.toString());
-          const { name, email, phone_number, reason, amount } = loanFormData;
+    request.on("end", async () => {
+      try {
+        const loanFormData = querystring.parse(body.toString());
+        const { name, email, phone, reason, amount } = loanFormData;
+        const uniqueToken = generateUniqueToken;
+        console.log(uniqueToken);
 
-          const insertQuery = `
-            INSERT INTO loans (name, email, phone_number, loan_reason, loan_amount)
-            VALUES ($1, $2, $3, $4, $5)
+        const date = new Date().toLocaleString();
+
+        const insertQuery = `
+            INSERT INTO loans (name, email, phone_number, loan_reason, loan_amount, unique_token, approval_or_rejection_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
           `;
 
-          const values = [name, email, phone_number, reason, Number(amount)];
+        const values = [
+          name,
+          email,
+          phone,
+          reason,
+          Number(amount),
+          uniqueToken,
+          date,
+        ];
 
-          const client = connectDatabase();
+        const client = connectDatabase();
 
-          try {
-            await (await client).query(insertQuery, values);
+        try {
+          await (await client).query(insertQuery, values);
 
-            response.writeHead(200, { "Content-Type": "text/plain" });
-            response.end("Loan application submitted successfully");
-          } catch (error) {
-            console.error(`Error inserting data into the database: ${error}`);
-            response.writeHead(500, { "Content-Type": "text/plain" });
-            response.end("Internal Server Error at query");
-          } finally {
-            closeDatabase(await client);
-          }
+          response
+            .writeHead(200, { "Content-Type": "text/html" })
+            // display the clients details
+            .end(displayLoanDetails(values));
         } catch (error) {
-          console.error(
-            `Error processing the form data or inserting into the database: ${error}`
-          );
+          console.error(`Error inserting data into the database: ${error}`);
           response.writeHead(500, { "Content-Type": "text/plain" });
-          response.end("Internal Server Error 67");
+          response.end("Internal Server Error at query");
+        } finally {
+          closeDatabase(await client);
         }
-      });
-    } catch (error) {
-      console.error(`Error: ${error}`);
-      response.writeHead(500, { "Content-Type": "text/plain" });
-      response.end("Internal Server Error 73");
-    }
+      } catch (error) {
+        console.error(
+          `Error processing the form data or inserting into the database: ${error}`
+        );
+        response.writeHead(500, { "Content-Type": "text/plain" });
+        response.end("Internal Server Error 67");
+      }
+    });
+  } else if (url === "/loan-details") {
+    let body = "";
+
+    request.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    request.on("end", async () => {
+      try {
+        const userToken = querystring.parse(body.toString());
+
+        const insertQuery = `
+        SELECT * FROM loans
+        WHERE unique_token = $1
+      `;
+
+        let values = [userToken];
+        const client = connectDatabase();
+
+        console.log(userToken);
+
+        try {
+          const result = (await client).query(insertQuery, values);
+          const loanDetails = (await result).rows[0];
+
+          response
+            .writeHead(200, {
+              "Content-Type": "text/plain",
+            })
+            .end(console.log(loanDetails));
+        } catch (err) {
+          console.error(`Error: `, err);
+          response
+            .writeHead(500, { "Content-Type": "text/plain" })
+            .end("Try again");
+        } finally {
+          closeDatabase(await client);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
   } else {
     response.writeHead(404, { "Content-Type": "text/plain" });
     response.end("Not Found hi");

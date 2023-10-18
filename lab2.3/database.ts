@@ -1,11 +1,12 @@
 import { Client } from "pg";
+import { password } from "./password";
 
 async function createDatabaseClient() {
   return new Client({
     host: "localhost",
     user: "postgres",
     port: 5432,
-    password: "iwillbecomerich",
+    password: password,
     database: "postgres",
   });
 }
