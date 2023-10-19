@@ -27,7 +27,7 @@ async function handleRequest(
       response.end("Internal Server Error at apply-loan");
     }
   } else if (url === "/apply-loan-success") {
-    let body = "";
+    let body: string = "";
 
     request.on("data", (chunk) => {
       body += chunk.toString();
@@ -38,7 +38,7 @@ async function handleRequest(
         const loanFormData = querystring.parse(body.toString());
         const { name, email, phone, reason, amount } = loanFormData;
         const uniqueToken = generateUniqueToken;
-        console.log(uniqueToken);
+        console.log(uniqueToken, "at success");
 
         const date = new Date().toLocaleString();
 
@@ -81,45 +81,35 @@ async function handleRequest(
         response.end("Internal Server Error 67");
       }
     });
-  } else if (url === "/loan-details") {
-    let body = "";
+  } else if (url === "/loan-details" && method === "POST") {
+    console.log("Test at loan-details on==main");
+
+    let body: string = "";
 
     request.on("data", (chunk) => {
       body += chunk.toString();
     });
     request.on("end", async () => {
       try {
-        const userToken = querystring.parse(body.toString());
+        const tokenData = querystring.parse(body);
+        const { unique_token } = tokenData;
 
-        const insertQuery = `
+        const client = await connectDatabase();
+
+        const selectQuery = `
         SELECT * FROM loans
         WHERE unique_token = $1
-      `;
+        `;
 
-        let values = [userToken];
-        const client = connectDatabase();
+        const result = await client.query(selectQuery, [unique_token]);
 
-        console.log(userToken);
+        const rows = result.rows;
 
-        try {
-          const result = (await client).query(insertQuery, values);
-          const loanDetails = (await result).rows[0];
+        client.release();
 
-          response
-            .writeHead(200, {
-              "Content-Type": "text/plain",
-            })
-            .end(console.log(loanDetails));
-        } catch (err) {
-          console.error(`Error: `, err);
-          response
-            .writeHead(500, { "Content-Type": "text/plain" })
-            .end("Try again");
-        } finally {
-          closeDatabase(await client);
-        }
+        console.log(rows);
       } catch (err) {
-        console.error(err);
+        console.error(`Error: ${err}`);
       }
     });
   } else {

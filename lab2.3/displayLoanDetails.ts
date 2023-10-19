@@ -17,6 +17,11 @@ export default function displayLoanDetails(values: any[]) {
           <li>Unique Token: ${uniqueToken}</li>
           <li>You borrowed at time: ${date}</li>
         </ul>
+        <button>
+          <a href="/">
+          Go back
+          </a>
+        </button>
       </body>
     </html>
   `;

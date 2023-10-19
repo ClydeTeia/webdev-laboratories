@@ -1,21 +1,17 @@
-import { Client } from "pg";
+import { Pool } from "pg";
 import { password } from "./password";
 
-async function createDatabaseClient() {
-  return new Client({
-    host: "localhost",
-    user: "postgres",
-    port: 5432,
-    password: password,
-    database: "postgres",
-  });
-}
+const pool = new Pool({
+  host: "localhost",
+  user: "postgres",
+  port: 5432,
+  password: password,
+  database: "postgres",
+});
 
 export async function connectDatabase() {
-  const client = createDatabaseClient();
-
   try {
-    await (await client).connect();
+    const client = await pool.connect();
     console.log("Connected to the database");
     return client;
   } catch (error) {
@@ -24,11 +20,11 @@ export async function connectDatabase() {
   }
 }
 
-export async function closeDatabase(client: Client) {
+export async function closeDatabase(client: any) {
   try {
-    await client.end();
-    console.log("Closed the database connection");
+    client.release();
+    console.log("Released the database connection");
   } catch (error) {
-    console.error(`Error closing the database connection: ${error}`);
+    console.error(`Error releasing the database connection: ${error}`);
   }
 }
