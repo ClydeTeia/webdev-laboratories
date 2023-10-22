@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="loansDiv"></div>
+
+    <script>
+      async function fetchLoans() {
+        const loansDiv = document.getElementById("loansDiv");
+        const response = await fetch("/loans");
+        const loans = await response.json();
+        console.log("The loans from the backend", loans);
+
+        let html = "<table>";
+
+        for (const loan of loans) {
+          html += /* html */ `
+            <tr>
+              <td>${loan.id}</td>
+              <td>${loan.email}</td>
+              <td>${loan.loan_amount}</td>
+            </tr>
+          `;
+        }
+
+        html += "</table>";
+        loansDiv.innerHTML = html;
+
+        setTimeout(fetchLoans, 5_000);
+      }
+
+      window.onload = () => {
+        fetchLoans();
+      };
+    </script>
+  </body>
+</html>

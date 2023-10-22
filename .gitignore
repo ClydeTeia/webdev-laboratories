@@ -1,3 +1,6 @@
+express-sample/password.ts
+express-sample/node_modules
+
 lab1/node_modules
 lab2.1/node_modules
 lab2.2/node_modules
@@ -440,3 +443,6 @@ lab2.3/node_modules/yn/index.js
 lab2.3/node_modules/yn/lenient.js
 lab2.3/node_modules/yn/license
 lab2.3/node_modules/yn/package.json
+
+lab3/node_modules
+lab3/password.ts
